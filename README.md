@@ -5,6 +5,7 @@ The API for the Manifest web app.  Control servers via a web interface using Ans
 
 - django
 - celery
+- RabbitMQ
 - ansible.runner
 - python firebase
 

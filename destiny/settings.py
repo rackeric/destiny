@@ -129,6 +129,9 @@ INSTALLED_APPS = (
     'dcelery',
 )
 
+#
+# Next 3 lines added for celery, ~crunch~
+#
 import djcelery
 djcelery.setup_loader()
 BROKER_URL = "amqp://guest:guest@localhost//"
