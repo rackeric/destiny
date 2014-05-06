@@ -19,4 +19,6 @@ urlpatterns = patterns('',
     url(r"^ansible_test2/", 'dcelery.views.ansible_view2'),
     url(r"^ansible_command_run/(?P<user_id>\d+)/(?P<job_id>-\w+)", 'dcelery.views.ansible_command_view'),
     url(r"^ansible_ping/(?P<user_id>\d+)/(?P<job_id>-.*-*.*)", 'dcelery.views.ansible_ping_view'),
+    url(r"^ansible_jeneric/(?P<user_id>\d+)/(?P<job_id>-.*-*.*)", 'dcelery.views.ansible_jeneric_view'),
+    url(r"^ansible_jeneric_testing/(?P<job_id>-.*-*.*)", 'dcelery.views.ansible_jeneric_testing_view'),
 )
