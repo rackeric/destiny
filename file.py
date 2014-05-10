@@ -70,11 +70,11 @@ def ansible_jeneric(job_id, user_id):
     #myExternalData.post(job_id + '/returns/', ast.literal_eval(json.loads(json_results)))
     #data = json.dumps(results, cls=JSONEncoder)
 
-    ##thisone ---- myExternalData.post(job_id + '/returns', json.loads(json_results))
+    myExternalData.post(job_id + '/returns', json.loads(json_results))
     #myExternalData.post(job_id + '/returns', firebase.json.loads(results))
     #myExternalData.put(job_id + '/returns', json.loads('{"contacted": {"162.242.225.175": {"changed": false, "invocation": {"module_args": "", "module_name": "ping"}, "ping": "pong"}}, "dark": {}}'), connection=None)
 
-    myExternalData.patch(job_id + '/returns', json.loads('{"contacted": {"Cloud-Server-13": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.002057", "end": "2014-05-08 04:01:49.692771", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.690714", "stderr": "", "stdout": "cloud-server-13"}, "Cloud-Server-14": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.001994", "end": "2014-05-08 04:01:49.449724", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.447730", "stderr": "", "stdout": "cloud-server-14"}}, "dark": {}}'))
+    #myExternalData.patch(job_id + '/returns', json.loads('{"contacted": {"Cloud-Server-13": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.002057", "end": "2014-05-08 04:01:49.692771", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.690714", "stderr": "", "stdout": "cloud-server-13"}, "Cloud-Server-14": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.001994", "end": "2014-05-08 04:01:49.449724", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.447730", "stderr": "", "stdout": "cloud-server-14"}}, "dark": {}}'))
 
     #returns.patch(job_id + '/returns', json.dumps(results))
     return json_results
@@ -83,24 +83,3 @@ def ansible_jeneric_view(request, job_id, user_id):
     ansible_jeneric.delay(job_id, user_id)
     return HttpResponse("ansible_jeneric task sent")
 
-def test_view(request):
-    remote_test.delay()
-    return HttpResponse("remote_test task sent")
-
-
-@celery.task
-def remote_test():
-
-    hosts = ["162.209.99.212","23.253.151.184"]
-
-    webInventory = ansible.inventory.Inventory(hosts)
-
-    webCommand = ansible.runner.Runner(
-        pattern='*',
-        module_name='command',
-        module_args='uptime',
-        inventory=webInventory,
-        remote_user='root',
-        remote_pass='t56yfg' ).run()
-
-    return webCommand
