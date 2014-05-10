@@ -124,17 +124,17 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'djcelery',
-    'kombu.transport.django',
-    'dcelery',
+    #'djcelery',
+    #'kombu.transport.django',
+    #'dcelery',
 )
 
 #
 # Next 3 lines added for celery, ~crunch~
-#
-import djcelery
-djcelery.setup_loader()
-BROKER_URL = "amqp://guest:guest@localhost//"
+##
+#import djcelery
+#djcelery.setup_loader()
+#BROKER_URL = "amqp://guest:guest@localhost//"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

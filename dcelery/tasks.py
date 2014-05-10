@@ -1,4 +1,6 @@
 from firebase import FirebaseApplication, FirebaseAuthentication
+#from firebase import Firebase
+import firebase
 from celery.decorators import task
 from ansible import utils
 import ansible.runner, json, os
