@@ -1,4 +1,3 @@
-import ast
 from ansible import utils
 from firebase import firebase, FirebaseApplication, FirebaseAuthentication
 from celery import Celery
@@ -7,7 +6,7 @@ import ansible.runner, json, os
 from django.http import HttpResponse
 from firebase.jsonutil import JSONEncoder
 
-celery = Celery('file', broker='amqp://guest@localhost//')
+celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
 
 @celery.task
 def ansible_jeneric(job_id, user_id):
@@ -67,7 +66,6 @@ def ansible_jeneric(job_id, user_id):
     # post results to firebase
     #myExternalData.post(job_id + '/returns', unescape(json.loads(json_results)))
     #myExternalData.post(job_id + '/returns/', results.decode('string-escape'))
-    #myExternalData.post(job_id + '/returns/', ast.literal_eval(json.loads(json_results)))
     #data = json.dumps(results, cls=JSONEncoder)
 
     myExternalData.post(job_id + '/returns', json.loads(json_results))
