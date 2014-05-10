@@ -23,7 +23,11 @@ http://www.miniwebtool.com/django-secret-key-generator/
 
 To run:
 
-python ./manage.py celeryd -l info
+python ./manage.py celeryd -l info (old using django-celery)
+
+NEW:
+
+celery -A file worker --loglevel=info (using stand alone celery)
 
 python manage.py runserver 0.0.0.0:8000
 
