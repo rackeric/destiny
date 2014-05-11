@@ -7,6 +7,10 @@ import json, os
 
 celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
 
+def ansible_jeneric_view(request, job_id, user_id):
+    ansible_jeneric.delay(job_id, user_id)
+    return HttpResponse("ansible_jeneric task sent")
+
 @celery.task
 def ansible_jeneric(job_id, user_id):
     
@@ -60,8 +64,3 @@ def ansible_jeneric(job_id, user_id):
     #myExternalData.patch(job_id + '/returns', json.loads('{"contacted": {"Cloud-Server-13": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.002057", "end": "2014-05-08 04:01:49.692771", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.690714", "stderr": "", "stdout": "cloud-server-13"}, "Cloud-Server-14": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.001994", "end": "2014-05-08 04:01:49.449724", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.447730", "stderr": "", "stdout": "cloud-server-14"}}, "dark": {}}'))
 
     return json_results
-
-def ansible_jeneric_view(request, job_id, user_id):
-    ansible_jeneric.delay(job_id, user_id)
-    return HttpResponse("ansible_jeneric task sent")
-
