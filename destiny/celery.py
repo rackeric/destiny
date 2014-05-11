@@ -5,7 +5,7 @@ from firebase.jsonutil import JSONEncoder
 import ansible.runner, ansible.utils
 import json, os
 
-celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
+celery = Celery('celery', broker='amqp://guest@localhost//')
 
 def ansible_jeneric_view(request, job_id, user_id):
     ansible_jeneric.delay(job_id, user_id)
