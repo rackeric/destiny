@@ -124,14 +124,15 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    # MD: uncomment next lines for django-celery
     #'djcelery',
     #'kombu.transport.django',
     #'dcelery',
 )
 
 #
-# Next 3 lines added for celery, ~crunch~
-##
+# Next 3 lines added for django-celery, ~crunch~
+#
 #import djcelery
 #djcelery.setup_loader()
 #BROKER_URL = "amqp://guest:guest@localhost//"
