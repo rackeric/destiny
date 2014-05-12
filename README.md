@@ -3,9 +3,9 @@ Destiny
 
 The API for the Manifest web app.  Control servers via a web interface using Ansible and Salt.
 
-destiny is a django project
-dcelery was the original (no longer used) django-celery app but ran in to issues with Celery 3.1.11 not allowing daemons to spawn child processes
-destinyCelery is the new app requiring Celery 3.0.24
+- destiny is a django project
+- dcelery was the original (no longer used) django-celery app but ran in to issues with Celery 3.1.11 not allowing daemons to spawn child processes
+- destinyCelery is the new app requiring Celery 3.0.24
 
 - django
 - celery
