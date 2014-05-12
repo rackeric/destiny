@@ -13,11 +13,11 @@ urlpatterns = patterns('',
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    url(r'^admin/', include(admin.site.urls)),
-    url(r"^$", 'dcelery.views.test_async'),
+    #url(r'^admin/', include(admin.site.urls)),
+    #url(r"^$", 'dcelery.views.test_async'),
     #url(r"^ansible_jeneric/(?P<user_id>\d+)/(?P<job_id>-.*-*.*)", 'dcelery.views.ansible_jeneric_view'),
     #url(r"^ansible_jeneric_testing/(?P<job_id>-.*-*.*)", 'dcelery.views.ansible_jeneric_testing_view'),
     
     # celery stand alone
-    url(r"^ansible_jeneric/(?P<user_id>\d+)/(?P<job_id>-.*-*.*)", 'destiny.celery.ansible_jeneric_view'),
+    url(r"^ansible_jeneric/(?P<user_id>\d+)/(?P<job_id>-.*-*.*)", 'destinyCelery.ansible_jeneric_view'),
 )
