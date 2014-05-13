@@ -47,12 +47,12 @@ def ansible_jeneric(job_id, user_id):
     myInventory = ansible.inventory.Inventory(myHostList)
 
     # set Host objects in Inventory object based on hosts_lists
-    for key, x in job.iteritems():
-        if x['name'] in myHostList:
-            tmpHost = myInventory.get_host(x['name'])
-            tmpHost.set_variable("ansible_ssh_host", x['ansible_ssh_host'])
-            tmpHost.set_variable("ansible_ssh_user", x['ansible_ssh_user'])
-            tmpHost.set_variable("ansible_ssh_pass", x['ansible_ssh_pass'])
+    for key, host in job.iteritems():
+        if host['name'] in myHostList:
+            tmpHost = myInventory.get_host(host['name'])
+            tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
+            tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
+            tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
 
  
     # run ansible module
