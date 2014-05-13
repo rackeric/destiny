@@ -19,7 +19,7 @@ def ansible_jeneric(job_id, user_id):
     authentication = FirebaseAuthentication(SECRET, True, True)
 
     # set the specific job from firebase with user
-    user = 'simplelogin:' + user_id
+    user = 'simplelogin:' + str(user_id)
     URL = 'https://deploynebula.firebaseio.com/users/' + user + '/external_data/'
     #myExternalData = FirebaseApplication(URL)
     myExternalData = FirebaseApplication(URL, authentication)
@@ -30,15 +30,30 @@ def ansible_jeneric(job_id, user_id):
     # finally, get the actual job and set ansible options
     job = myExternalData.get(URL, job_id)
 
+    # set vars from job data in firebase
     myHostList = job['host_list']
     myModuleName = job['module_name']
     myModuleArgs = job['module_args']
     myPattern = job['pattern']
     myRemoteUser = job['remote_user']
     myRemotePass = job['remote_pass']
+    myProjectID = job['project_id']
+
+    # set and get Ansible Project Inventory
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + myProjectID
+    job = myExternalData.get(URL, 'inventory')
 
     # creating Ansible Inventory based on host_list
     myInventory = ansible.inventory.Inventory(myHostList)
+
+    # set Host objects in Inventory object based on hosts_lists
+    for key, x in job.iteritems():
+        if x['name'] in myHostList:
+            tmpHost = myInventory.get_host(x['name'])
+            tmpHost.set_variable("ansible_ssh_host", x['ansible_ssh_host'])
+            tmpHost.set_variable("ansible_ssh_user", x['ansible_ssh_user'])
+            tmpHost.set_variable("ansible_ssh_pass", x['ansible_ssh_pass'])
+
  
     # run ansible module
     results = ansible.runner.Runner(
@@ -46,8 +61,8 @@ def ansible_jeneric(job_id, user_id):
         forks=10,
         module_name=myModuleName,
         module_args=myModuleArgs,
-        remote_user=myRemoteUser,
-        remote_pass=myRemotePass,
+        #remote_user=myRemoteUser,
+        #remote_pass=myRemotePass,
         inventory=myInventory,
     ).run()
     
