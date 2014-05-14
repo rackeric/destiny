@@ -7,12 +7,12 @@ import json, os
 
 celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
 
-def ansible_jeneric_view(request, job_id, user_id):
-    ansible_jeneric.delay(job_id, user_id)
+def ansible_jeneric_view(request, user_id, project_id, job_id):
+    ansible_jeneric.delay(user_id, project_id, job_id)
     return HttpResponse("ansible_jeneric task sent")
 
 @celery.task
-def ansible_jeneric(job_id, user_id):
+def ansible_jeneric(user_id, project_id, job_id):
     
     # firebase authentication
     SECRET = os.environ['SECRET']
@@ -20,7 +20,7 @@ def ansible_jeneric(job_id, user_id):
 
     # set the specific job from firebase with user
     user = 'simplelogin:' + str(user_id)
-    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/external_data/'
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/external_data/'
     #myExternalData = FirebaseApplication(URL)
     myExternalData = FirebaseApplication(URL, authentication)
 
