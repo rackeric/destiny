@@ -48,12 +48,23 @@ def ansible_jeneric(user_id, project_id, job_id):
 
     # set Host objects in Inventory object based on hosts_lists
     # NEED: to set other host options
+    # BUG: hostnames with periods (.) do not work
     for key, host in job.iteritems():
         if host['name'] in myHostList:
             tmpHost = myInventory.get_host(host['name'])
             tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
             tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
             tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
+            # Group Stuffs
+            if myInventory.get_group(host['group']) is None:
+                # set up new group
+                tmpGroup = ansible.inventory.Group(host['group'])
+                tmpGroup.add_host(myInventory.get_host(host['name']))
+                myInventory.add_group(tmpGroup)
+            else:
+                # just add to existing group
+                tmpGroup = myInventory.get_group(host['group'])
+                tmpGroup.add_host(myInventory.get_host(host['name']))
 
     # run ansible module
     results = ansible.runner.Runner(
