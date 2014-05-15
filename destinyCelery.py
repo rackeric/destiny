@@ -11,7 +11,7 @@ def ansible_jeneric_view(request, user_id, project_id, job_id):
     ansible_jeneric.delay(user_id, project_id, job_id)
     return HttpResponse("ansible_jeneric task sent")
 
-@celery.task
+@celery.task(serializer='json')
 def ansible_jeneric(user_id, project_id, job_id):
     
     # firebase authentication
@@ -47,6 +47,7 @@ def ansible_jeneric(user_id, project_id, job_id):
     myInventory = ansible.inventory.Inventory(myHostList)
 
     # set Host objects in Inventory object based on hosts_lists
+    # NEED: to set other host options
     for key, host in job.iteritems():
         if host['name'] in myHostList:
             tmpHost = myInventory.get_host(host['name'])
@@ -54,7 +55,6 @@ def ansible_jeneric(user_id, project_id, job_id):
             tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
             tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
 
- 
     # run ansible module
     results = ansible.runner.Runner(
         pattern=myPattern,
@@ -67,7 +67,7 @@ def ansible_jeneric(user_id, project_id, job_id):
     ).run()
     
     # set status to COMPLETE
-    myExternalData.patch(job_id, json.loads('{"status":"COMPLETE"}'))
+    myExternalData.patch(job_id, {"status":"COMPLETE"})
 
     # jsonify the results
     json_results = ansible.utils.jsonify(results)
@@ -75,7 +75,6 @@ def ansible_jeneric(user_id, project_id, job_id):
     #
     # HELP! can't get a proper json object to pass, but below string works
     #
-    myExternalData.post(job_id + '/returns', json_results)
-    #myExternalData.patch(job_id + '/returns', json.loads('{"contacted": {"Cloud-Server-13": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.002057", "end": "2014-05-08 04:01:49.692771", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.690714", "stderr": "", "stdout": "cloud-server-13"}, "Cloud-Server-14": {"changed": true, "cmd": ["hostname"], "delta": "0:00:00.001994", "end": "2014-05-08 04:01:49.449724", "invocation": {"module_args": "hostname", "module_name": "command"}, "rc": 0, "start": "2014-05-08 04:01:49.447730", "stderr": "", "stdout": "cloud-server-14"}}, "dark": {}}'))
+    myExternalData.post(job_id + '/returns/', results)
 
-    return json_results
+    return results
