@@ -9,13 +9,16 @@ import json, os
 
 celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
 
+
 def ansible_playbook_view(request, user_id, project_id, playbook_id):
     ansible_playbook.delay(user_id, project_id, playbook_id)
     return HttpResponse("ansible_playbook task sent")
 
+
 def ansible_jeneric_view(request, user_id, project_id, job_id):
     ansible_jeneric.delay(user_id, project_id, job_id)
     return HttpResponse("ansible_jeneric task sent")
+
 
 @celery.task(serializer='json')
 def ansible_playbook(user_id, project_id, playbook_id):
@@ -115,10 +118,8 @@ def ansible_playbook(user_id, project_id, playbook_id):
             tmpPlay.write("    - name: %s\n" % handler['name'])
             tmpPlay.write("      service: name=%s state=%s\n\n" % (handler['service_name'], handler['service_state']))
 
-
-        tmpPlay.close()
-        #os.remove("/tmp" + playbook_id + '.yml')
-
+    # close file
+    tmpPlay.close()
 
     # Run Ansible PLaybook
     stats = ansible.callbacks.AggregateStats()
@@ -142,7 +143,11 @@ def ansible_playbook(user_id, project_id, playbook_id):
     myExternalData.patch(playbook_id, {"status":"COMPLETE"})
     myExternalData.post(playbook_id + '/returns', play)
 
+    # delete tmp playbook file
+    os.remove("/tmp/" + playbook_id + '.yml')
+
     return play
+
 
 @celery.task(serializer='json')
 def ansible_jeneric(user_id, project_id, job_id):
