@@ -76,7 +76,7 @@ def ansible_playbook(user_id, project_id, playbook_id):
     ##
     URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/roles/'
     playbook = myExternalData.get(URL, playbook_id)
-    
+
     tmpPlay = open("/tmp/" + playbook_id + '.yml', "w")
    
     tmpPlay.write("---\n")
@@ -84,16 +84,40 @@ def ansible_playbook(user_id, project_id, playbook_id):
     tmpPlay.write("  hosts: %s\n" % playbook['playHosts'])
     tmpPlay.write("  remote_user: %s\n" % playbook['playUsername'])
     tmpPlay.write("\n")
-    tmpPlay.write("  tasks:\n")
-    for key, task in playbook['modules'].iteritems():
-        tmpPlay.write("    - name: %s\n" % task['name'])
-        tmpPlay.write("      %s: " % task['option'])
-        for option in task['options']:
-            tmpPlay.write("%s=%s" % (option['paramater'], option['value']))
-        tmpPlay.write("\n\n")
-    
-    tmpPlay.close()
-    #os.remote("/tmp" + playbook_id + '.yml')
+    # if has variables
+    if playbook.has_key('variables'):
+        tmpPlay.write("  vars:\n")
+        for key, var in playbook['variables'].iteritems():
+            tmpPlay.write("    %s: %s\n" % (var['name'], var['value']))
+        tmpPlay.write("\n")
+    # if has tasks
+    if playbook.has_key('modules'): 
+        tmpPlay.write("  tasks:\n")
+        # if has includes
+        if playbook.has_key('includes'):
+            for key, include in playbook['includes']:
+                tmpPlay.write("    - include: %s" % include['name'])
+        for key, task in playbook['modules'].iteritems():
+            tmpPlay.write("    - name: %s\n" % task['name'])
+            tmpPlay.write("      %s: " % task['option'])
+            for option in task['options']:
+                tmpPlay.write("%s=%s " % (option['paramater'], option['value']))
+            tmpPlay.write("\n")
+            # if has notify
+            if option.has_key('notify'):
+                tmpPlay.write("      notify:\n")
+                tmpPlay.write("        - %s\n" % option['notify'])
+            tmpPlay.write("\n")
+    # if has handlers
+    if playbook.has_key('handlers'):
+        tmpPlay.write("  handlers:\n")
+        for key, handler in playbook['handlers'].iteritems():
+            tmpPlay.write("    - name: %s\n" % handler['name'])
+            tmpPlay.write("      service: name=%s state=%s\n\n" % (handler['service_name'], handler['service_state']))
+
+
+        tmpPlay.close()
+        #os.remove("/tmp" + playbook_id + '.yml')
 
 
     # Run Ansible PLaybook
@@ -117,7 +141,6 @@ def ansible_playbook(user_id, project_id, playbook_id):
     # update status to RUNNING in firebase
     myExternalData.patch(playbook_id, {"status":"COMPLETE"})
     myExternalData.post(playbook_id + '/returns', play)
-
 
     return play
 
