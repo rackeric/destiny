@@ -21,4 +21,5 @@ urlpatterns = patterns('',
     # celery stand alone
     url(r"^ansible_jeneric/(?P<user_id>\d+)/(?P<project_id>-.*-*.*)/(?P<job_id>-.*-*.*)", 'destinyCelery.ansible_jeneric_view'),
     url(r"^ansible_playbook/(?P<user_id>\d+)/(?P<project_id>-.*-*.*)/(?P<playbook_id>-.*-*.*)", 'destinyCelery.ansible_playbook_view'),
+    url(r"^rax_create_server/(?P<user_id>\d+)/(?P<project_id>-.*-*.*)/(?P<job_id>-.*-*.*)", 'destinyCelery.rax_create_server_view'),
 )
