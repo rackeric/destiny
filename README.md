@@ -32,7 +32,7 @@ python ./manage.py celeryd -l info (old using django-celery)
 
 NEW:
 
-celery -A file worker --loglevel=info (using stand alone celery)
+celery -A destinyCelery worker --loglevel=info (using stand alone celery)
 
 python manage.py runserver 0.0.0.0:8000
 

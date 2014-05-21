@@ -104,7 +104,11 @@ def ansible_playbook(user_id, project_id, playbook_id):
             tmpPlay.write("    - name: %s\n" % task['name'])
             tmpPlay.write("      %s: " % task['option'])
             for option in task['options']:
-                tmpPlay.write("%s=%s " % (option['paramater'], option['value']))
+                # for command and shell modules one-off crapness
+                if option['paramater']:
+                    tmpPlay.write("%s=%s " % (option['paramater'], option['value']))
+                else:
+                    tmpPlay.write("%s " % option['value'])
             tmpPlay.write("\n")
             # if has notify
             if option.has_key('notify'):
