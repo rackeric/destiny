@@ -1,3 +1,5 @@
+from io import TextIOWrapper, BytesIO
+from cStringIO import StringIO
 from firebase import firebase, FirebaseApplication, FirebaseAuthentication
 from celery import Celery, task
 from django.http import HttpResponse
@@ -5,8 +7,7 @@ from firebase.jsonutil import JSONEncoder
 import ansible.runner, ansible.utils, ansible.playbook
 from ansible import utils
 from ansible import callbacks
-import json, os
-import pyrax
+import json, os, sys, pyrax
 
 celery = Celery('destinyCelery', broker='amqp://guest@localhost//')
 
@@ -201,19 +202,34 @@ def ansible_playbook(user_id, project_id, playbook_id):
     # close file
     tmpPlay.close()
 
-    # Run Ansible PLaybook
-    stats = ansible.callbacks.AggregateStats()
-    playbook_cb = ansible.callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
-    runner_cb = ansible.callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
+    prev = sys.stdout
+    prev2 = sys.stderr
+    try:
+        sys.stdout = StringIO()
+        sys.stderr = StringIO()
+        
+        # Run Ansible PLaybook
+        stats = ansible.callbacks.AggregateStats()
+        playbook_cb = ansible.callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
+        runner_cb = ansible.callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
-    play = ansible.playbook.PlayBook(
-        playbook='/tmp/' + playbook_id + '.yml',
-        inventory=myInventory,
-        runner_callbacks=runner_cb,
-        stats=stats,
-        callbacks=playbook_cb,
-        forks=10
-    ).run()
+        play = ansible.playbook.PlayBook(
+            playbook='/tmp/' + playbook_id + '.yml',
+            inventory=myInventory,
+            runner_callbacks=runner_cb,
+            stats=stats,
+            callbacks=playbook_cb,
+            forks=10
+        ).run()
+
+        myStdout = sys.stdout.getvalue()
+        myStderr = sys.stderr.getvalue()
+        #myExternalData.patch(playbook_id, {'stdout': myStdout})
+        myExternalData.post(playbook_id + '/returns', {'stats': play, 'stdout': myStdout})
+        #myExternalData.patch(playbook_id, {'stderr': myStderr})
+    finally:
+        sys.stdout = prev
+        sys.stderr = prev2
 
     ##
     ## Post play results in to firebase
@@ -221,7 +237,7 @@ def ansible_playbook(user_id, project_id, playbook_id):
     ## WHERE?
     # update status to RUNNING in firebase
     myExternalData.patch(playbook_id, {"status":"COMPLETE"})
-    myExternalData.post(playbook_id + '/returns', play)
+    #myExternalData.post(playbook_id + '/returns', play)
 
     # delete tmp playbook file
     os.remove("/tmp/" + playbook_id + '.yml')
