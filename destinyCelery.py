@@ -50,12 +50,16 @@ def rax_create_server(user_id, project_id, job_id):
     tmpImage = job['image']
     tmpServerName = job['servername']
     tmpGroup = job['group']
+    tmpRegion = job['region']
 
     # set RAX cloud authentication
     pyrax.set_credentials(tmpUsername, tmpAPIkey)
 
+    # set region
+    cs = pyrax.connect_to_cloudservers(region=tmpRegion)
+
     # create objects
-    cs = pyrax.cloudservers
+    #cs = pyrax.cloudservers
 
     # create cloud server
     server = cs.servers.create(tmpServerName, tmpImage, tmpFlavor)
@@ -74,10 +78,14 @@ def rax_create_server(user_id, project_id, job_id):
     # update firebase, add new server to inventory list
     URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/'
     myInventory = FirebaseApplication(URL, authentication)
+    if ':' in newServer.networks['public'][0]:
+        myNetwork = newServer.networks['public'][1]
+    else:
+        myNetwork = newServer.networks['public'][0]
     myInventory.post('inventory', {'user_id': user,
 			                          'name': tmpServerName,
 			                          'group': tmpGroup,
-			                          'ansible_ssh_host': newServer.networks['public'][0],
+			                          'ansible_ssh_host': myNetwork,
 			                          'ansible_ssh_user': 'root',
 			                          'ansible_ssh_pass': server.adminPass })
 
