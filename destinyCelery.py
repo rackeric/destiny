@@ -28,7 +28,6 @@ def ansible_jeneric_view(request, user_id, project_id, job_id):
 @celery.task(serializer='json')
 def rax_create_server(user_id, project_id, job_id):
 
-    pyrax.set_setting("identity_type", "rackspace")
 
     # firebase authentication
     SECRET = os.environ['SECRET']
@@ -54,10 +53,18 @@ def rax_create_server(user_id, project_id, job_id):
     tmpRegion = job['region']
 
     # set RAX cloud authentication
-    pyrax.set_credentials(tmpUsername, tmpAPIkey)
+    pyrax.set_setting("identity_type", "rackspace")
+    try:
+        pyrax.set_credentials(job['rax_username'], job['rax_apikey'])
+    except:
+        pass
+    try:
+        pyrax.set_credentials(str(job['rax_username']), str(job['rax_apikey']))
+    except:
+        pass    
 
     # set region
-    cs = pyrax.connect_to_cloudservers(region=tmpRegion)
+    cs = pyrax.connect_to_cloudservers(tmpRegion)
 
     # create objects
     #cs = pyrax.cloudservers
