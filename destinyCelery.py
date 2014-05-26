@@ -163,6 +163,11 @@ def ansible_playbook(user_id, project_id, playbook_id):
     URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/roles/'
     playbook = myExternalData.get(URL, playbook_id)
 
+    # order tasks in playbook base on order field in dict
+    def func(key):
+        return playbook['modules'][key]['order']
+    sorted_tasks_keys = sorted(playbook['modules'].keys(), key=func)
+
     tmpPlay = open("/tmp/" + playbook_id + '.yml', "w")
    
     tmpPlay.write("---\n")
@@ -183,10 +188,11 @@ def ansible_playbook(user_id, project_id, playbook_id):
         if playbook.has_key('includes'):
             for key, include in playbook['includes']:
                 tmpPlay.write("    - include: %s" % include['name'])
-        for key, task in playbook['modules'].iteritems():
-            tmpPlay.write("    - name: %s\n" % task['name'])
-            tmpPlay.write("      %s: " % task['option'])
-            for option in task['options']:
+        # now for the tasks
+        for key in sorted_tasks_keys:
+            tmpPlay.write("    - name: %s\n" % playbook['modules'][key]['name'])
+            tmpPlay.write("      %s: " % playbook['modules'][key]['option'])
+            for option in playbook['modules'][key]['options']:
                 # for command and shell modules one-off crapness
                 if option['paramater']:
                     tmpPlay.write("%s=%s " % (option['paramater'], option['value']))
@@ -246,7 +252,7 @@ def ansible_playbook(user_id, project_id, playbook_id):
     #myExternalData.post(playbook_id + '/returns', play)
 
     # delete tmp playbook file
-    os.remove("/tmp/" + playbook_id + '.yml')
+    #os.remove("/tmp/" + playbook_id + '.yml')
 
     return play
 
