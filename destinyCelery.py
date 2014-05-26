@@ -28,7 +28,6 @@ def ansible_jeneric_view(request, user_id, project_id, job_id):
 @celery.task(serializer='json')
 def rax_create_server(user_id, project_id, job_id):
 
-
     # firebase authentication
     SECRET = os.environ['SECRET']
     authentication = FirebaseAuthentication(SECRET, True, True)
@@ -232,7 +231,7 @@ def ansible_playbook(user_id, project_id, playbook_id):
         myStdout = sys.stdout.getvalue()
         myStderr = sys.stderr.getvalue()
         #myExternalData.patch(playbook_id, {'stdout': myStdout})
-        myExternalData.post(playbook_id + '/returns', {'stats': play, 'stdout': myStdout})
+        myExternalData.post(playbook_id + '/returns', {'stats': sanitize_keys(play), 'stdout': myStdout})
         #myExternalData.patch(playbook_id, {'stderr': myStderr})
     finally:
         sys.stdout = prev
@@ -274,7 +273,10 @@ def ansible_jeneric(user_id, project_id, job_id):
     # set vars from job data in firebase
     myHostList = job['host_list']
     myModuleName = job['module_name']
-    myModuleArgs = job['module_args']
+    if 'module_args' in job.keys():
+        myModuleArgs = job['module_args']
+    else:
+        myModuleArgs = ''
     myPattern = job['pattern']
     myRemoteUser = job['remote_user']
     myRemotePass = job['remote_pass']
@@ -327,6 +329,12 @@ def ansible_jeneric(user_id, project_id, job_id):
     #
     # HELP! can't get a proper json object to pass, but below string works
     #
-    myExternalData.post(job_id + '/returns/', results)
+    myExternalData.post(job_id + '/returns/', sanitize_keys(results))
 
     return results
+
+# firebase can not use several special characters for key names
+# https://www.firebase.com/docs/creating-references.html
+def sanitize_keys(mydict):
+    return dict((k.replace('.', '_'),sanitize_keys(v) if hasattr(v,'keys') else v) for k,v in mydict.items())
+
