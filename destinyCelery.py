@@ -16,6 +16,10 @@ def rax_create_server_view(request, user_id, project_id, job_id):
     rax_create_server.delay(user_id, project_id, job_id)
     return HttpResponse("rax_create_server task sent")
 
+def ansible_playbook_manual_view(request, user_id, project_id, playbook_id):
+    ansible_playbook_manual.delay(user_id, project_id, playbook_id)
+    return HttpResponse("ansible_playbook_manual task sent")
+
 def ansible_playbook_view(request, user_id, project_id, playbook_id):
     ansible_playbook.delay(user_id, project_id, playbook_id)
     return HttpResponse("ansible_playbook task sent")
@@ -101,6 +105,118 @@ def rax_create_server(user_id, project_id, job_id):
     myExternalData.patch(job_id, {"status":"COMPLETE"})
 
     return
+
+
+@celery.task(serializer='json')
+def ansible_playbook_manual(user_id, project_id, playbook_id):
+    
+    # firebase authentication
+    SECRET = os.environ['SECRET']
+    authentication = FirebaseAuthentication(SECRET, True, True)
+
+    # set the specific job from firebase with user
+    user = 'simplelogin:' + str(user_id)
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/rolesmanual/'
+    myExternalData = FirebaseApplication(URL, authentication)
+
+    # update status to RUNNING in firebase
+    myExternalData.patch(playbook_id, {"status":"RUNNING"})
+    
+    # finally, get the actual job and set ansible options
+    job = myExternalData.get(URL, playbook_id)
+
+
+    ##
+    ## Create full Ansible Inventory, playbook defines hosts to run on
+    ##
+    # set and get Ansible Project Inventory
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id
+    inventory_list = myExternalData.get(URL, '/inventory')
+
+
+    tmpHostList = []
+    if inventory_list:
+        for key, host in inventory_list.iteritems():
+            tmpHostList.append(host['name'])
+
+        # creating Ansible Inventory based on host_list
+        myInventory = ansible.inventory.Inventory(tmpHostList)
+
+        # set Host objects in Inventory object based on hosts_lists
+        # NEED: to set other host options
+        # BUG: hostnames with periods (.) do not work
+        for key, host in inventory_list.iteritems():
+            tmpHost = myInventory.get_host(host['name'])
+            tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
+            tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
+            tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
+            # Group Stuffs
+            if myInventory.get_group(host['group']) is None:
+                # set up new group
+                tmpGroup = ansible.inventory.Group(host['group'])
+                tmpGroup.add_host(myInventory.get_host(host['name']))
+                myInventory.add_group(tmpGroup)
+            else:
+                # just add to existing group
+                tmpGroup = myInventory.get_group(host['group'])
+                tmpGroup.add_host(myInventory.get_host(host['name']))
+    else:
+        myInventory = ansible.inventory.Inventory()
+
+    ##
+    ## Create temp playbook file
+    ##
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id + '/rolesmanual/' + playbook_id
+    playbook = myExternalData.get(URL, '/playbook')
+
+    tmpPlay = open("/tmp/" + playbook_id + '.yml', "w")
+
+    tmpPlay.write(playbook)
+   
+    # close file
+    tmpPlay.close()
+
+    prev = sys.stdout
+    prev2 = sys.stderr
+    try:
+        sys.stdout = StringIO()
+        sys.stderr = StringIO()
+        
+        # Run Ansible PLaybook
+        stats = ansible.callbacks.AggregateStats()
+        playbook_cb = ansible.callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
+        runner_cb = ansible.callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
+
+        play = ansible.playbook.PlayBook(
+            playbook='/tmp/' + playbook_id + '.yml',
+            inventory=myInventory,
+            runner_callbacks=runner_cb,
+            stats=stats,
+            callbacks=playbook_cb,
+            forks=10
+        ).run()
+
+        myStdout = sys.stdout.getvalue()
+        myStderr = sys.stderr.getvalue()
+        #myExternalData.patch(playbook_id, {'stdout': myStdout})
+        myExternalData.post(playbook_id + '/returns', {'stats': sanitize_keys(play), 'stdout': myStdout})
+        #myExternalData.patch(playbook_id, {'stderr': myStderr})
+    finally:
+        sys.stdout = prev
+        sys.stderr = prev2
+
+    ##
+    ## Post play results in to firebase
+    ##
+    ## WHERE?
+    # update status to RUNNING in firebase
+    myExternalData.patch(playbook_id, {"status":"COMPLETE"})
+    #myExternalData.post(playbook_id + '/returns', play)
+
+    # delete tmp playbook file
+    #os.remove("/tmp/" + playbook_id + '.yml')
+
+    return play
 
 
 @celery.task(serializer='json')
