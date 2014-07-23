@@ -149,7 +149,8 @@ def ansible_playbook_manual(user_id, project_id, playbook_id):
             tmpHost = myInventory.get_host(host['name'])
             tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
             tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
-            tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
+            if host.has_key('ansible_ssh_pass'):
+                tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
             # Group Stuffs
             if myInventory.get_group(host['group']) is None:
                 # set up new group
@@ -176,6 +177,18 @@ def ansible_playbook_manual(user_id, project_id, playbook_id):
     # close file
     tmpPlay.close()
 
+
+    # get ssh key file
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id
+    ssh_key = myExternalData.get(URL, '/ssh_key')
+
+    tmpKey = open("/tmp/" + playbook_id + '_key', "w")
+    tmpKey.write(ssh_key)
+    # close file
+    tmpKey.close()
+    os.chmod("/tmp/" + playbook_id + '_key', 0600)
+
+
     prev = sys.stdout
     prev2 = sys.stderr
     try:
@@ -187,14 +200,34 @@ def ansible_playbook_manual(user_id, project_id, playbook_id):
         playbook_cb = ansible.callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
         runner_cb = ansible.callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
-        play = ansible.playbook.PlayBook(
-            playbook='/tmp/' + playbook_id + '.yml',
-            inventory=myInventory,
-            runner_callbacks=runner_cb,
-            stats=stats,
-            callbacks=playbook_cb,
-            forks=10
-        ).run()
+        if ssh_key is not None:
+            play = ansible.playbook.PlayBook(
+                playbook='/tmp/' + playbook_id + '.yml',
+                inventory=myInventory,
+                runner_callbacks=runner_cb,
+                stats=stats,
+                callbacks=playbook_cb,
+                private_key_file='/tmp/' + playbook_id + '_key',
+                forks=10
+            ).run()
+        else:
+            play = ansible.playbook.PlayBook(
+                playbook='/tmp/' + playbook_id + '.yml',
+                inventory=myInventory,
+                runner_callbacks=runner_cb,
+                stats=stats,
+                callbacks=playbook_cb,
+                forks=10
+            ).run()
+
+        #play = ansible.playbook.PlayBook(
+        #    playbook='/tmp/' + playbook_id + '.yml',
+        #    inventory=myInventory,
+        #    runner_callbacks=runner_cb,
+        #    stats=stats,
+        #    callbacks=playbook_cb,
+        #    forks=10
+        #).run()
 
         myStdout = sys.stdout.getvalue()
         myStderr = sys.stderr.getvalue()
@@ -260,7 +293,8 @@ def ansible_playbook(user_id, project_id, playbook_id):
         tmpHost = myInventory.get_host(host['name'])
         tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
         tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
-        tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
+        if host.has_key('ansible_ssh_user'):
+            tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
         # Group Stuffs
         if myInventory.get_group(host['group']) is None:
             # set up new group
@@ -330,6 +364,17 @@ def ansible_playbook(user_id, project_id, playbook_id):
     # close file
     tmpPlay.close()
 
+    # get ssh key file
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id
+    ssh_key = myExternalData.get(URL, '/ssh_key')
+
+    tmpKey = open("/tmp/" + playbook_id + '_key', "w")
+    tmpKey.write(ssh_key)
+    # close file
+    tmpKey.close()
+    os.chmod("/tmp/" + playbook_id + '_key', 0600)
+    
+
     prev = sys.stdout
     prev2 = sys.stderr
     try:
@@ -341,14 +386,25 @@ def ansible_playbook(user_id, project_id, playbook_id):
         playbook_cb = ansible.callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
         runner_cb = ansible.callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
-        play = ansible.playbook.PlayBook(
-            playbook='/tmp/' + playbook_id + '.yml',
-            inventory=myInventory,
-            runner_callbacks=runner_cb,
-            stats=stats,
-            callbacks=playbook_cb,
-            forks=10
-        ).run()
+        if ssh_key is not None:
+            play = ansible.playbook.PlayBook(
+                playbook='/tmp/' + playbook_id + '.yml',
+                inventory=myInventory,
+                runner_callbacks=runner_cb,
+                stats=stats,
+                callbacks=playbook_cb,
+                private_key_file='/tmp/' + playbook_id + '_key',
+                forks=10
+            ).run()
+        else:
+            play = ansible.playbook.PlayBook(
+                playbook='/tmp/' + playbook_id + '.yml',
+                inventory=myInventory,
+                runner_callbacks=runner_cb,
+                stats=stats,
+                callbacks=playbook_cb,
+                forks=10
+            ).run()
 
         myStdout = sys.stdout.getvalue()
         myStderr = sys.stderr.getvalue()
@@ -368,7 +424,9 @@ def ansible_playbook(user_id, project_id, playbook_id):
     #myExternalData.post(playbook_id + '/returns', play)
 
     # delete tmp playbook file
-    #os.remove("/tmp/" + playbook_id + '.yml')
+    os.remove('/tmp/' + playbook_id + '.yml')
+    # delete tmp key file
+    os.remove('/tmp/' + playbook_id + '_key')
 
     return play
 
@@ -419,7 +477,8 @@ def ansible_jeneric(user_id, project_id, job_id):
             tmpHost = myInventory.get_host(host['name'])
             tmpHost.set_variable("ansible_ssh_host", host['ansible_ssh_host'])
             tmpHost.set_variable("ansible_ssh_user", host['ansible_ssh_user'])
-            tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
+            if host.has_key('ansible_ssh_pass'):
+                tmpHost.set_variable("ansible_ssh_pass", host['ansible_ssh_pass'])
             # Group Stuffs
             if myInventory.get_group(host['group']) is None:
                 # set up new group
@@ -431,16 +490,39 @@ def ansible_jeneric(user_id, project_id, job_id):
                 tmpGroup = myInventory.get_group(host['group'])
                 tmpGroup.add_host(myInventory.get_host(host['name']))
 
+    # get ssh key file
+    URL = 'https://deploynebula.firebaseio.com/users/' + user + '/projects/' + project_id
+    ssh_key = myExternalData.get(URL, '/ssh_key')
+
+    tmpKey = open("/tmp/" + project_id + '_key', "w")
+    tmpKey.write(ssh_key)
+    # close file
+    tmpKey.close()
+    os.chmod("/tmp/" + project_id + '_key', 0600)
+
     # run ansible module
-    results = ansible.runner.Runner(
-        pattern=myPattern,
-        forks=10,
-        module_name=myModuleName,
-        module_args=myModuleArgs,
-        #remote_user=myRemoteUser,
-        #remote_pass=myRemotePass,
-        inventory=myInventory,
-    ).run()
+    if ssh_key is not None:
+        results = ansible.runner.Runner(
+	    pattern=myPattern,
+       	    forks=10,
+ 	    module_name=myModuleName,
+	    module_args=myModuleArgs,
+	    #remote_user=myRemoteUser,
+	    #remote_pass=myRemotePass,
+            private_key_file='/tmp/' + project_id + '_key',
+	    inventory=myInventory,
+        ).run()
+    else:
+        results = ansible.runner.Runner(
+	    pattern=myPattern,
+       	    forks=10,
+ 	    module_name=myModuleName,
+	    module_args=myModuleArgs,
+	    #remote_user=myRemoteUser,
+	    #remote_pass=myRemotePass,
+	    inventory=myInventory
+        ).run()
+
     
     # set status to COMPLETE
     myExternalData.patch(job_id, {"status":"COMPLETE"})
@@ -452,6 +534,8 @@ def ansible_jeneric(user_id, project_id, job_id):
     # HELP! can't get a proper json object to pass, but below string works
     #
     myExternalData.post(job_id + '/returns/', sanitize_keys(results))
+
+    os.remove('/tmp/' + project_id + '_key')
 
     return results
 
